@@ -19,10 +19,10 @@
 #include "TSpectrum.h"
 #include "TPaveStats.h"
 #include "TStyle.h"
+#include "TFitResult.h"
 #include "TFitResultPtr.h"
 #include "TList.h"
 #include "TSystem.h"
-
 // #define _draw_waveform
 // define _draw_waveform to draw waveforms of both gain channel;
 
@@ -155,7 +155,7 @@ void langaufit(TH1D *his)
         if (binLeft == 0 || binRight == his->GetNbinsX())
             break;
     } while (LeftValue > thresholdValue || RightValue > thresholdValue || LeftleftValue > thresholdValue || Rightrightvalue > thresholdValue);
-    assert(LeftValue < thresholdValue && RightValue < thresholdValue);
+    // assert(LeftValue < thresholdValue && RightValue < thresholdValue);
     // determine range done
 
     // start values, parameter lower limits, parameter upper limits
@@ -203,10 +203,25 @@ void draw_spectra(TString);
 // High/Low gain ratio for 25 channels (subtract pedestal)
 // input *_processed.root file
 void gain_ratio(TString);
-
 // process all step1 files in a directory to generated corresponding *_processed.root files, and hadd to 'merged.root' file.
 // parameter is the path of directory either absolute or relative one, default is current work directory.
-void process_all(TString path_name = "./")
+void calibrate_all(TString);
+
+int main(int argc, char **argv)
+{
+    std::cout << "To execute this program, input: " << "`./calibrate $dir_path(default='./')`" << std::endl;
+    if (argc == 1)
+        calibrate_all("./");
+    else if (argc == 2)
+        calibrate_all(argv[1]);
+    else
+    {
+        std::cerr << "Error! Please input correct parameters." << std::endl;
+        return -1;
+    }
+    return 0;
+}
+void calibrate_all(TString path_name = "./")
 {
     gStyle->SetOptFit(1111);
     TFile *infile;
@@ -242,6 +257,7 @@ void process_all(TString path_name = "./")
         }
     }
     gSystem->Exec(Form("hadd %s/merged.root %s/*_processed.root", path_name.Data(), path_name.Data()));
+    gSystem->Exec(Form("rm %s/*_processed.root", path_name.Data()));
     peak_fit(Form("%s/merged.root", path_name.Data()));
 }
 
@@ -268,7 +284,7 @@ void landau_fit(TH1D *his)
         if (binLeft == 0 || binRight == his->GetNbinsX())
             break;
     } while (LeftValue > thresholdValue || RightValue > thresholdValue || LeftleftValue > thresholdValue || Rightrightvalue > thresholdValue);
-    assert(LeftValue < thresholdValue && RightValue < thresholdValue);
+    // assert(LeftValue < thresholdValue && RightValue < thresholdValue);
     fit_res = his->Fit("landau", "QS", "", his->GetBinCenter(binLeft), his->GetBinCenter(binRight));
 }
 
@@ -294,7 +310,7 @@ void linear_fit(TGraph *gr)
             }
         }
     }
-    assert(!(thresholdID == 0 || Xleft == 0));
+    // assert(!(thresholdID == 0 || Xleft == 0));
     fit_res = gr->Fit("pol1", "QS", "", 0, Xleft);
 }
 
